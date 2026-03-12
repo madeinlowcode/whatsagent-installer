@@ -2,7 +2,7 @@
 # WhatsAgent CRM — Instalador Local para Windows
 #
 # Uso remoto (1 comando):
-#   powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/madeinlowcode/agent-whats-web/main/install.ps1 -OutFile $env:TEMP\install-whatsagent.ps1; & $env:TEMP\install-whatsagent.ps1"
+#   irm https://raw.githubusercontent.com/madeinlowcode/whatsagent-installer/main/install.ps1 -OutFile install.ps1; .\install.ps1
 #
 # Uso local:
 #   .\install.ps1
@@ -354,42 +354,44 @@ if (-not $skipWizard) {
     # Gerar .env
     Write-Step "Gerando arquivo .env..."
 
-    $envContent = @"
-# WhatsAgent CRM — Gerado pelo instalador em $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
-
-# Anthropic API key
-ANTHROPIC_API_KEY=$apiKey
-
-# Database (PostgreSQL via Docker)
-DATABASE_URL=postgresql://whatsagent:whatsagent123@localhost:5432/whatsagent
-POSTGRES_PASSWORD=whatsagent123
-
-# Redis (via Docker)
-REDIS_URL=redis://localhost:6379
-
-# Security
-JWT_SECRET=$jwtSecret
-ENCRYPTION_KEY=$encryptionKey
-
-# Admin password (usado no primeiro login)
-ADMIN_PASSWORD=$adminPassword
-
-# Agent settings
-MAX_BUDGET_USD=0.50
-AGENT_MODEL=$agentModel
-
-# WhatsApp / Playwright (browser visivel)
-HEADLESS=false
-POLL_INTERVAL_MS=5000
-LOGIN_TIMEOUT_MS=300000
-DEBOUNCE_MS=10000
-
-# Knowledge base
-KNOWLEDGE_DIR=workspace/memory/knowledge
-
-# Server
-API_PORT=3001
-"@
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    $envLines = @(
+        "# WhatsAgent CRM — Gerado pelo instalador em $timestamp",
+        "",
+        "# Anthropic API key",
+        "ANTHROPIC_API_KEY=$apiKey",
+        "",
+        "# Database (PostgreSQL via Docker)",
+        "DATABASE_URL=postgresql://whatsagent:whatsagent123@localhost:5432/whatsagent",
+        "POSTGRES_PASSWORD=whatsagent123",
+        "",
+        "# Redis (via Docker)",
+        "REDIS_URL=redis://localhost:6379",
+        "",
+        "# Security",
+        "JWT_SECRET=$jwtSecret",
+        "ENCRYPTION_KEY=$encryptionKey",
+        "",
+        "# Admin password (usado no primeiro login)",
+        "ADMIN_PASSWORD=$adminPassword",
+        "",
+        "# Agent settings",
+        "MAX_BUDGET_USD=0.50",
+        "AGENT_MODEL=$agentModel",
+        "",
+        "# WhatsApp / Playwright (browser visivel)",
+        "HEADLESS=false",
+        "POLL_INTERVAL_MS=5000",
+        "LOGIN_TIMEOUT_MS=300000",
+        "DEBOUNCE_MS=10000",
+        "",
+        "# Knowledge base",
+        "KNOWLEDGE_DIR=workspace/memory/knowledge",
+        "",
+        "# Server",
+        "API_PORT=3001"
+    )
+    $envContent = $envLines -join "`r`n"
 
     Set-Content -Path $envFile -Value $envContent -Encoding UTF8
     Write-Success "Arquivo .env criado com sucesso"
@@ -527,14 +529,14 @@ try {
     $shell = New-Object -ComObject WScript.Shell
     $shortcut = $shell.CreateShortcut($shortcutPath)
     $shortcut.TargetPath = "cmd.exe"
-    $shortcut.Arguments = "/k cd /d `"$ProjectDir`" && pnpm start"
+    $shortcut.Arguments = "/k cd /d `"$ProjectDir`" & pnpm start"
     $shortcut.WorkingDirectory = $ProjectDir
     $shortcut.Description = "WhatsAgent CRM — Assistente IA para WhatsApp Business"
     $shortcut.Save()
     Write-Success "Atalho criado: $shortcutPath"
 } catch {
     Write-Warn "Nao foi possivel criar atalho no Desktop."
-    Write-Info "Voce pode iniciar manualmente com: cd `"$ProjectDir`" && pnpm start"
+    Write-Info "Voce pode iniciar manualmente com: cd $ProjectDir ; pnpm start"
 }
 
 # ═══════════════════════════════════════════════════════════════════
@@ -554,7 +556,7 @@ Write-Host "    4. Va em 'Sessoes' para conectar seu WhatsApp" -ForegroundColor 
 Write-Host ""
 Write-Host "  Para iniciar futuramente:" -ForegroundColor White
 Write-Host "    - Use o atalho 'WhatsAgent CRM' no Desktop" -ForegroundColor Gray
-Write-Host "    - Ou rode: cd `"$ProjectDir`" && pnpm start" -ForegroundColor Gray
+Write-Host "    - Ou rode: cd $ProjectDir ; pnpm start" -ForegroundColor Gray
 Write-Host ""
 
 $startNow = Read-Host "  Deseja iniciar o WhatsAgent agora? (S/N)"
